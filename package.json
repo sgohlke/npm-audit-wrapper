@@ -1,0 +1,21 @@
+{
+  "name": "npm-audit-wrapper",
+  "version": "0.1.0",
+  "description": "npm-audit wrapper",
+  "main": "npm-audit-wrapper",
+  "preferGlobal": true,
+  "bin": "./npm-audit-wrapper.js",
+  "scripts": {
+    "audit": "node npm-audit-wrapper.js --vb",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "npm-audit",
+    "wrapper"
+  ],
+  "author": "Stefan Gohlke",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^2.20.0"
+  }
+}
