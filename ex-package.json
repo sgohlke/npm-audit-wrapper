@@ -11,13 +11,13 @@
   "license": "ISC",
   "dependencies": {
     "express": "^2.0.0",
-    "lottoland-special": "1.0.0",
+    "mycompany-special": "1.0.0",
     "super": "0.0.1"
   },
   "devDependencies": {
     "jasmine": "^2.0.0",
     "karma": "^2.0.1",
-    "lottoland-test": "1.0.0",
+    "mycompany-test": "1.0.0",
     "nodemon": "^0.1.0"
   }
 }

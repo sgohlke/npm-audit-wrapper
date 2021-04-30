@@ -5,26 +5,28 @@ const execSync = require('child_process').execSync;
 let program = require('commander');
 
 program
-  .version('0.1.0')
-  .option('--vb', 'Enable verbose output')
-  .option('--cleanup', 'Cleanup files after audit')
-  .option('--no-depreport', 'Skip creating dependency report')
-  .option('--excludedev', 'Exclude devDependencies from audit')
-  .option('--registry [url]', 'Use registry [url]', 'https://registry.npmjs.org')
-  .option('--minserv [level]', 'Define minimum severity for scan results', /^(low|moderate|high|critical)$/i, 'low')
+  .version('0.2.0')
+  .description('Performs npm audit security scan for ex-package.json file in same folder against provided registry and creates results output.')
+  .option('--vb', 'enable verbose output')
+  .option('--cleanup', 'cleanup files for intermetidate steps after audit')
+  .option('--no-depreport', 'skip creating dependency report')
+  .option('--excludedev', 'exclude devDependencies from audit')
+  .addOption(new program.Option('--registry <url>', 'use defined registry').default('https://registry.npmjs.org', 'npmjs default registry https://registry.npmjs.org'))
+  .addOption(new program.Option('--minserv [level]', 'define minimum severity for scan results').default('low', 'low').choices(['low', 'moderate', 'high', 'critical'])) 
   .parse(process.argv);
 
 // Main Code
 console.log('Running npm-audit-wrapper');
+let options = program.opts();
 initDependencies();
 runNpmAudit();
 excludeScanResults();
 
-if(program.depreport) {
+if(options.depreport) {
 	createDependencyReport();
 }
 
-if(program.cleanup) {
+if(options.cleanup) {
 	cleanup();
 }
 
@@ -32,7 +34,7 @@ if(program.cleanup) {
 //Helper functions
 
 function logIfVerbose(text) {
-	if (program.vb) {
+	if (options.vb) {
 		console.log(text);
 	}
 }
@@ -70,7 +72,6 @@ function deleteFile(filename) {
 	logIfVerbose('Sucessfully deleted ' + filename);
 } 
 
-
 //Sub program functions
 
 function initDependencies() {
@@ -98,7 +99,7 @@ function removeFromScan(depObject, depType) {
 	if (depObject) {
 	  	for (var i in depObject) { 
 	  		logIfVerbose('Found ' + depType + ' ' + i);
-	  		if( checkModuleExclusionForScan(i) || (program.excludedev && depType==='devDependency') ) {
+	  		if( checkModuleExclusionForScan(i) || (options.excludedev && depType==='devDependency') ) {
 				logIfVerbose(depType + ' ' + i + ' should be excluded from scan');
 				delete depObject[i];
 			}
@@ -108,12 +109,12 @@ function removeFromScan(depObject, depType) {
 
 function checkModuleExclusionForScan(moduleName) {
 	//return false;
-	return moduleName.indexOf('lottoland') > -1;
+	return moduleName.indexOf('mycompany') > -1;
 }
 
 function runNpmAudit() {
-	logIfVerbose('Creating package-lock.json and executing npm audit with registry ' + program.registry);
-	let scanResult = execSync('cd depresults && npm install --package-lock-only >nul 2>&1 && npm audit --json --registry=' + program.registry + ' || exit 0');
+	logIfVerbose('Creating package-lock.json and executing npm audit with registry ' + options.registry);
+	let scanResult = execSync('cd depresults && npm install --package-lock-only >nul 2>&1 && npm audit --json --registry=' + options.registry + ' || exit 0');
 	writeFile('depResults/orgresults.json', scanResult);
 }
 
@@ -129,16 +130,16 @@ function excludeScanResultsFromResultFile(data) {
 	let packageFile = JSON.parse(data);
 	logIfVerbose('Checking for result exclusions');
 	
-	if (packageFile.advisories) {
+	if (packageFile.vulnerabilities) {
 		let moduleName;
 		let severity;
-	  	for (var key in packageFile.advisories) {
-	  		moduleName = packageFile.advisories[key].module_name;
-	  		severity = packageFile.advisories[key].severity; 
+	  	for (var key in packageFile.vulnerabilities) {
+	  		moduleName = packageFile.vulnerabilities[key].name;
+	  		severity = packageFile.vulnerabilities[key].severity; 
 	  		logIfVerbose('Found entry number ' + key + ' with severity "' + severity + '" with moduleName "' + moduleName + '"');
-	  		if(checkModuleExclusionForAudit(moduleName) || ( getSeverityLevel(severity) < getSeverityLevel(program.minserv))  ) {
+	  		if(checkModuleExclusionForAudit(moduleName) || ( getSeverityLevel(severity) < getSeverityLevel(options.minserv))  ) {
 				logIfVerbose(moduleName + ' should be excluded from results');
-				delete packageFile.advisories[key];
+				delete packageFile.vulnerabilities[key];
 			}
 	  	}
 	}
@@ -146,8 +147,8 @@ function excludeScanResultsFromResultFile(data) {
 }
 
 function checkModuleExclusionForAudit(moduleName) {
-	return false;
-	//return moduleName.indexOf('qs') > -1;
+	// return false;
+	return moduleName.indexOf('qs') > -1;
 }
 
 function createDependencyReport() {
@@ -159,42 +160,57 @@ function createDependencyReportFromResultFile(data) {
 	let packageFile = JSON.parse(data);
 	logIfVerbose('Create Dependency Check Result');
 	
-	if (packageFile.advisories) {
+	if (packageFile.vulnerabilities) {
 		let vulEntry;
 		let reportOutput='';
-	  	for (var key in packageFile.advisories) {
-	  		vulEntry = packageFile.advisories[key];
+	  	for (var key in packageFile.vulnerabilities) {
+	  		vulEntry = packageFile.vulnerabilities[key];
 	  	
 	  		if (vulEntry.severity) {
-	  			reportOutput+= '|-----' +  vulEntry.severity + '-----| ';
+	  			reportOutput+= '|---' +  createSeverityLabel(vulEntry.severity) + '---| ';
 	  		}
+	  		
+	  		if (vulEntry.name) {
+	  			reportOutput+= vulEntry.name + '\r\n';
+	  		}
+
+			for (var viaEntry of vulEntry.via) {
+				reportOutput+= '| via: ' + createViaEntryLog(viaEntry) + '\r\n';
+			}
 	  		
 	  		if (vulEntry.title) {
-	  			reportOutput+= vulEntry.title + '\r\n';
+	  			reportOutput+= '| ' + vulEntry.title;
 	  		}
 	  		
-	  		if (vulEntry.module_name) {
-	  			reportOutput+= '| ' + vulEntry.module_name;
-	  		}
-	  		
-	  		let findings;
-	  		if (vulEntry.findings[0]) {
-	  			findings = vulEntry.findings[0];
-	 			reportOutput+= findings.dev ? ' [DEV] in\r\n' : ' [PROD] in\r\n';
-	 			if (findings.paths) {
-	 				for (var pathEntry in findings.paths) {
-	 					reportOutput+= '- ' + findings.paths[pathEntry] + '\r\n';
-	 				}
-	 			}
-	  		}
-	  		
-	  		if (vulEntry.recommendation) {
-	  			reportOutput+= '| Rec.: ' + vulEntry.recommendation;
+	  		if (vulEntry.fixAvailable) {
+	  			reportOutput+= '| Fix: ' + createFixEntry(vulEntry.fixAvailable);
 	  		}
 	  		reportOutput+= '\r\n\r\n';
 	  		
 	  	}
 	  	console.log('\r\nAudit report:\r\n\r\n' + reportOutput);	  	
+	}
+}
+
+function createSeverityLabel(severity) {
+	if (severity) {
+		return severity.substring(0, 3);
+	} else return '';
+}
+
+function createViaEntryLog(viaEntry) {
+	if (typeof(viaEntry) === 'string' || typeof(viaEntry[0]) === 'string')  {
+		return viaEntry;
+	} else {
+		return '--' + createSeverityLabel(viaEntry.severity) + '-- ' + viaEntry.dependency + ' with version-range "' +  viaEntry.range + '" and problem: "' + viaEntry.title + '" url: ' + viaEntry.url;
+	}
+}
+
+function createFixEntry(fixEntry) {
+	if (typeof(fixEntry) === 'boolean') {
+		return fixEntry;
+	} else {
+		return 'update ' + fixEntry.name + ' to version ' + fixEntry.version;
 	}
 }
 
