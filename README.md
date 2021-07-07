@@ -8,7 +8,7 @@ This project is still in early stages and not yet as flexible and customizeable 
 
 
 ## Requirements
-NodeJS and npm have to be installed and available in order to use this app. Tested with **NodeJS v14.16.0** and **npm v7.11.1**. As the logic in the program heavily depends on the structure of the *package.json* file and response from *npm audit* call it might not work properly with other versions and/or if the response  from *npm audit* call changes too much.
+NodeJS and npm have to be installed and available in order to use this app. Tested with **NodeJS v14.16.0**/**15.14.0** and **npm > v7.11.1**. As the logic in the program heavily depends on the structure of the *package.json* file and response from *npm audit* call it might not work properly with other versions and/or if the response  from *npm audit* call changes too much.
 
 
 ## Features

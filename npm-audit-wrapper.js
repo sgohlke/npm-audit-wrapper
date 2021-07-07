@@ -114,7 +114,7 @@ function checkModuleExclusionForScan(moduleName) {
 
 function runNpmAudit() {
 	logIfVerbose('Creating package-lock.json and executing npm audit with registry ' + options.registry);
-	let scanResult = execSync('cd depresults && npm install --package-lock-only >nul 2>&1 && npm audit --json --registry=' + options.registry + ' || exit 0');
+	let scanResult = execSync('cd depResults && npm install --package-lock-only >nul 2>&1 && npm audit --json --registry=' + options.registry + ' || exit 0');
 	writeFile('depResults/orgresults.json', scanResult);
 }
 
