@@ -1,6 +1,6 @@
 {
   "name": "@sgohlke/npm-audit-wrapper",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Performs npm audit security scan for ex-package.json file in same folder against provided registry and creates results output.",
   "main": "npm-audit-wrapper",
   "bin": "./npm-audit-wrapper.js",
@@ -17,7 +17,7 @@
   "homepage": "https://github.com/sgohlke/npm-audit-wrapper#readme",
   "license": "ISC",
   "dependencies": {
-    "commander": "8.0.0"
+    "commander": "8.1.0"
   },
   "bugs": {
     "url": "https://github.com/sgohlke/npm-audit-wrapper/issues"
