@@ -17,7 +17,7 @@
   "homepage": "https://github.com/sgohlke/npm-audit-wrapper#readme",
   "license": "ISC",
   "dependencies": {
-    "commander": "8.1.0"
+    "commander": "8.3.0"
   },
   "bugs": {
     "url": "https://github.com/sgohlke/npm-audit-wrapper/issues"
